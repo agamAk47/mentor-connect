@@ -19,29 +19,18 @@ $app = Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->reportable(function (\Throwable $e) {
-            echo "<h1>ORIGINAL LARAVEL ERROR</h1><pre>" . $e->getMessage() . "\n" . $e->getTraceAsString() . "</pre>";
-            die();
-        });
+        //
     })->create();
 
-if (isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL'])) {
+// ── Vercel Serverless Overrides ──
+// Vercel's filesystem is read-only except /tmp
+// Redirect all writable paths to /tmp so Laravel doesn't crash
+$isVercel = isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL']) 
+    || is_dir('/tmp/bootstrap-cache/cache');
+
+if ($isVercel) {
     $app->useStoragePath('/tmp/storage');
     $app->useBootstrapPath('/tmp/bootstrap-cache');
-    
-    $directories = [
-        '/tmp/storage/framework/views',
-        '/tmp/storage/framework/cache/data',
-        '/tmp/storage/framework/sessions',
-        '/tmp/storage/logs',
-        '/tmp/bootstrap-cache',
-        '/tmp/bootstrap-cache/cache',
-    ];
-    foreach ($directories as $dir) {
-        if (!is_dir($dir)) {
-            mkdir($dir, 0777, true);
-        }
-    }
 }
 
 return $app;

@@ -1,44 +1,55 @@
 <?php
+/**
+ * Vercel Serverless Entry Point for Laravel
+ * 
+ * Handles all Vercel-specific filesystem constraints before Laravel boots:
+ * 1. Creates writable /tmp directories for storage, cache, views, logs
+ * 2. Copies pre-built bootstrap cache files to writable location
+ * 3. Catches and displays any fatal errors
+ */
+
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 try {
-    // On Vercel, the filesystem is read-only except /tmp
-    // Laravel needs bootstrap/cache to be writable BEFORE it boots
-    $bootstrapCache = __DIR__ . '/../bootstrap/cache';
-    if (!is_writable($bootstrapCache)) {
-        $tmpCache = '/tmp/bootstrap-cache/cache';
-        if (!is_dir($tmpCache)) {
-            mkdir($tmpCache, 0777, true);
-        }
-        // Copy existing cache files to tmp
-        foreach (glob($bootstrapCache . '/*') as $file) {
-            if (is_file($file)) {
-                copy($file, $tmpCache . '/' . basename($file));
-            }
-        }
-        // Create packages.php and services.php if they don't exist
-        if (!file_exists($tmpCache . '/packages.php')) {
-            file_put_contents($tmpCache . '/packages.php', '<?php return [];');
-        }
-        if (!file_exists($tmpCache . '/services.php')) {
-            file_put_contents($tmpCache . '/services.php', '<?php return [];');
+    // ── Step 1: Create ALL writable directories Laravel needs ──
+    $directories = [
+        '/tmp/storage/framework/views',
+        '/tmp/storage/framework/cache/data',
+        '/tmp/storage/framework/sessions',
+        '/tmp/storage/logs',
+        '/tmp/bootstrap-cache/cache',
+    ];
+    foreach ($directories as $dir) {
+        if (!is_dir($dir)) {
+            mkdir($dir, 0777, true);
         }
     }
-    
+
+    // ── Step 2: Copy bootstrap cache files to writable /tmp ──
+    $sourceCache = __DIR__ . '/../bootstrap/cache';
+    $tmpCache = '/tmp/bootstrap-cache/cache';
+    if (is_dir($sourceCache)) {
+        foreach (glob($sourceCache . '/*.php') as $file) {
+            $dest = $tmpCache . '/' . basename($file);
+            if (!file_exists($dest)) {
+                copy($file, $dest);
+            }
+        }
+    }
+
+    // ── Step 3: Boot Laravel ──
     require __DIR__ . '/../public/index.php';
+
 } catch (\Throwable $e) {
-    echo "<h1>Fatal Vercel PHP Error</h1>";
-    echo "<h3>Main Exception:</h3>";
-    echo "<pre>" . (string)$e . "</pre>";
-    
+    http_response_code(500);
+    echo "<h1>Application Error</h1>";
+    echo "<pre>" . htmlspecialchars((string)$e) . "</pre>";
     $prev = $e->getPrevious();
-    $count = 1;
     while ($prev) {
-        echo "<h3>Previous Exception $count:</h3>";
-        echo "<pre>" . (string)$prev . "</pre>";
+        echo "<h3>Caused by:</h3>";
+        echo "<pre>" . htmlspecialchars((string)$prev) . "</pre>";
         $prev = $prev->getPrevious();
-        $count++;
     }
 }
