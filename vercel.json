@@ -26,7 +26,7 @@
     "env": {
         "APP_NAME": "Mentor Connect",
         "APP_ENV": "production",
-        "APP_DEBUG": "false",
+        "APP_DEBUG": "true",
         "DB_CONNECTION": "mongodb",
         "DB_DATABASE": "mentor_connect",
         "CACHE_DRIVER": "array",
