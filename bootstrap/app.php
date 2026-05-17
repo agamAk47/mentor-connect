@@ -19,7 +19,10 @@ $app = Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->reportable(function (\Throwable $e) {
+            echo "<h1>ORIGINAL LARAVEL ERROR</h1><pre>" . $e->getMessage() . "\n" . $e->getTraceAsString() . "</pre>";
+            die();
+        });
     })->create();
 
 if (isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL'])) {
