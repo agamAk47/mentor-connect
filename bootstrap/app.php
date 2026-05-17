@@ -35,6 +35,7 @@ if (isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL'])) {
         '/tmp/storage/framework/sessions',
         '/tmp/storage/logs',
         '/tmp/bootstrap-cache',
+        '/tmp/bootstrap-cache/cache',
     ];
     foreach ($directories as $dir) {
         if (!is_dir($dir)) {

@@ -8,7 +8,7 @@ try {
     // Laravel needs bootstrap/cache to be writable BEFORE it boots
     $bootstrapCache = __DIR__ . '/../bootstrap/cache';
     if (!is_writable($bootstrapCache)) {
-        $tmpCache = '/tmp/bootstrap-cache';
+        $tmpCache = '/tmp/bootstrap-cache/cache';
         if (!is_dir($tmpCache)) {
             mkdir($tmpCache, 0777, true);
         }
